@@ -307,6 +307,9 @@ class MonthlyStatement(models.Model):
 # ---------------------------------------------------------------------------
 
 
+MPESA_ACCOUNT_REFERENCE = "Maziwalog"
+
+
 class MpesaTransaction(models.Model):
     class Purpose(models.TextChoices):
         STORE_DEBT = "STORE_DEBT", "Store Debt Repayment"

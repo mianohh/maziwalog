@@ -39,6 +39,7 @@ from .models import (
     Membership,
     MilkIntake,
     MpesaTransaction,
+    MPESA_ACCOUNT_REFERENCE,
     MonthlyStatement,
     StoreCreditTransaction,
 )
@@ -564,7 +565,7 @@ def payment_stk_push(request):
 
 def _initiate_stk(*, cooler, farmer, phone, amount, purpose, user):
     """Call Daraja then persist the transaction (CheckoutRequestID is unique)."""
-    account_ref = farmer.member_number if farmer else cooler.slug
+    account_ref = MPESA_ACCOUNT_REFERENCE
     client = DarajaClient()
     response = client.initiate_stk_push(
         phone=phone,
