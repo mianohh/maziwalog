@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+{% block head_title %}Milk Intake Ledger{% endblock head_title %}
+{% block page_title %}Daily Milk Intake{% endblock page_title %}
+
+{% block content %}
+<div class="row g-3">
+
+  {# ---- Sticky entry card ---- #}
+  <div class="col-lg-5">
+    <div class="form-panel position-lg-sticky" style="top: 5.5rem;">
+      <h3><i class="bi bi-clipboard2-pulse me-1"></i> Record a delivery</h3>
+      <form method="post" action="{% url 'clerk_intake' %}">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+        <div class="alert alert-danger py-2 small">
+          <i class="bi bi-exclamation-triangle me-1"></i>{{ form.non_field_errors|join:" " }}
+        </div>
+        {% endif %}
+
+        <div class="mb-3">
+          <label class="ml-field-label" for="{{ form.farmer.id_for_label }}">Farmer member number</label>
+          <input type="search" class="form-control form-control-sm mb-2" id="farmerFilter"
+                 placeholder="Search by name or member number..." aria-label="Filter farmers">
+          {{ form.farmer }}
+          {% if form.farmer.errors %}
+          <div class="text-danger small mt-1"><i class="bi bi-exclamation-circle"></i> {{ form.farmer.errors|join:" " }}</div>
+          {% endif %}
+        </div>
+
+        <div class="mb-3">
+          <label class="ml-field-label" for="{{ form.collection_date.id_for_label }}">Collection date</label>
+          {{ form.collection_date }}
+          {% if form.collection_date.errors %}
+          <div class="text-danger small mt-1">{{ form.collection_date.errors|join:" " }}</div>
+          {% endif %}
+        </div>
+
+        <div class="mb-3">
+          <span class="ml-field-label">Session</span>
+          <div class="ml-session-toggle btn-group w-100" role="group" aria-label="Collection session">
+            <input type="radio" class="btn-check" name="session" id="id_session_morning" value="MORNING"
+                   {% if form.session.value == 'MORNING' or not form.session.value %}checked{% endif %}>
+            <label class="btn btn-outline-primary" for="id_session_morning">
+              <i class="bi bi-sunrise"></i> Morning
+            </label>
+            <input type="radio" class="btn-check" name="session" id="id_session_evening" value="EVENING"
+                   {% if form.session.value == 'EVENING' %}checked{% endif %}>
+            <label class="btn btn-outline-primary" for="id_session_evening">
+              <i class="bi bi-sunset"></i> Evening
+            </label>
+          </div>
+          {% if form.session.errors %}
+          <div class="text-danger small mt-1">{{ form.session.errors|join:" " }}</div>
+          {% endif %}
+        </div>
+
+        <div class="row g-2 mb-3">
+          <div class="col-6">
+            <label class="ml-field-label" for="{{ form.accepted_litres.id_for_label }}">Accepted litres</label>
+            {{ form.accepted_litres }}
+            {% if form.accepted_litres.errors %}
+            <div class="text-danger small mt-1">{{ form.accepted_litres.errors|join:" " }}</div>
+            {% endif %}
+          </div>
+          <div class="col-6">
+            <label class="ml-field-label" for="{{ form.rejected_litres.id_for_label }}">Rejected litres</label>
+            {{ form.rejected_litres }}
+            {% if form.rejected_litres.errors %}
+            <div class="text-danger small mt-1">{{ form.rejected_litres.errors|join:" " }}</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="mb-3" id="rejectionReasonWrap">
+          <label class="ml-field-label" for="{{ form.rejection_reason.id_for_label }}">
+            Rejection reason
+          </label>
+          {{ form.rejection_reason }}
+          {% if form.rejection_reason.errors %}
+          <div class="text-danger small mt-1">{{ form.rejection_reason.errors|join:" " }}</div>
+          {% endif %}
+          <div class="form-text small">Required when rejected litres is greater than zero.</div>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100 py-3 fs-5 ml-touch-target">
+          <i class="bi bi-check2-lg me-1"></i> Record Delivery
+        </button>
+      </form>
+    </div>
+  </div>
+
+  {# ---- Live log table ---- #}
+  <div class="col-lg-7">
+    <div class="ml-card">
+      <div class="ml-card-header">
+        <span><i class="bi bi-journal-text me-1"></i> Today's deliveries ({{ today|date:"l, d F Y" }})</span>
+        <span class="small ml-muted">{{ day_entries|length }} record(s)</span>
+      </div>
+      <div class="ml-card-body p-0 ml-table-wrap">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>Farmer</th>
+              <th>Session</th>
+              <th class="ml-currency">Accepted</th>
+              <th class="ml-currency">Rejected</th>
+              <th>Reason</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for entry in day_entries %}
+            <tr {% if entry.rejected_litres %}class="ml-row-exception"{% endif %}>
+              <td class="small num-mono ml-muted">{{ entry.created_at|date:"H:i" }}</td>
+              <td>
+                <a href="{% url 'farmer_detail' entry.farmer.pk %}">{{ entry.farmer.full_name }}</a>
+                <div class="small num-mono ml-muted">{{ entry.farmer.member_number }}</div>
+              </td>
+              <td>
+                <span class="ml-pill {% if entry.session == 'MORNING' %}ml-pill-pending{% else %}ml-pill-success{% endif %}">
+                  <i class="bi {% if entry.session == 'MORNING' %}bi-sunrise{% else %}bi-sunset{% endif %}"></i>
+                  {{ entry.get_session_display }}
+                </span>
+              </td>
+              <td class="ml-volume ml-currency"><i class="bi bi-check-circle"></i> {{ entry.accepted_litres|floatformat:2 }} L</td>
+              <td class="ml-currency">
+                {% if entry.rejected_litres %}
+                <span class="ml-pill ml-pill-danger"><i class="bi bi-x-circle"></i> {{ entry.rejected_litres|floatformat:2 }} L</span>
+                {% else %}
+                <span class="ml-muted">{{ entry.rejected_litres|floatformat:2 }} L</span>
+                {% endif %}
+              </td>
+              <td class="small">{{ entry.rejection_reason|default:"--" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="6" class="text-center text-muted py-5">
+                <i class="bi bi-droplet d-block fs-3 mb-2"></i>
+                No deliveries recorded today yet.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+          <tfoot class="ml-totals-footer">
+            <tr>
+              <td colspan="3" class="text-uppercase small">Session totals</td>
+              <td class="ml-currency">{{ day_accepted|floatformat:2 }} L</td>
+              <td class="ml-currency">{{ day_rejected|floatformat:2 }} L</td>
+              <td class="small ml-muted">Month: {{ month_accepted|floatformat:2 }} L</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock content %}
+
+{% block extra_body %}
+<script>
+(function () {
+  'use strict';
+  // Filter the farmer select by typed name / member number.
+  var filter = document.getElementById('farmerFilter');
+  var select = document.getElementById('id_farmer');
+  if (filter && select) {
+    var options = Array.prototype.slice.call(select.options);
+    filter.addEventListener('input', function () {
+      var q = filter.value.trim().toLowerCase();
+      options.forEach(function (opt) {
+        opt.hidden = q !== '' && opt.text.toLowerCase().indexOf(q) === -1;
+      });
+      if (select.selectedOptions.length && select.selectedOptions[0].hidden) {
+        select.selectedIndex = 0;
+      }
+    });
+  }
+
+  // Show the rejection reason only when rejected litres > 0 (or on error / edit).
+  var wrap = document.getElementById('rejectionReasonWrap');
+  var rejected = document.getElementById('id_rejected_litres');
+  if (wrap && rejected) {
+    var forceShow = wrap.querySelector('.text-danger') !== null ||
+      (document.getElementById('id_rejection_reason') || {}).value;
+    var sync = function () {
+      if (forceShow) { wrap.style.display = ''; return; }
+      var value = parseFloat(rejected.value || '0');
+      wrap.style.display = (isNaN(value) || value <= 0) ? 'none' : '';
+    };
+    rejected.addEventListener('input', sync);
+    sync();
+  }
+})();
+</script>
+{% endblock extra_body %}

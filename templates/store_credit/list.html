@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block head_title %}Store Credit{% endblock head_title %}
+{% block page_title %}Store Credit{% endblock page_title %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h2 class="fw-bold mb-0"><i class="bi bi-cart3 me-2"></i>Agrovet Store Credit</h2>
+    <div class="text-muted small">Running credit book against monthly milk earnings</div>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{% url 'store_credit_create' %}" class="btn btn-primary ml-touch-target">
+      <i class="bi bi-plus-lg"></i> New credit sale
+    </a>
+  </div>
+</div>
+
+{# ---- Inline credit sale form ---- #}
+<div class="form-panel mb-3">
+  <h3><i class="bi bi-pencil-square me-1"></i> Record credit sale</h3>
+  <form method="post" action="{% url 'store_credit_create' %}">
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+    <div class="alert alert-danger py-2 small">
+      <i class="bi bi-exclamation-triangle me-1"></i>{{ form.non_field_errors|join:" " }}
+    </div>
+    {% endif %}
+    <div class="row g-2 align-items-end">
+      <div class="col-md-3">
+        <label class="ml-field-label" for="{{ form.farmer.id_for_label }}">Farmer</label>
+        {{ form.farmer }}
+        {% if form.farmer.errors %}
+        <div class="text-danger small mt-1">{{ form.farmer.errors|join:" " }}</div>
+        {% endif %}
+      </div>
+      <div class="col-md-3">
+        <label class="ml-field-label" for="{{ form.item_name.id_for_label }}">Item</label>
+        {{ form.item_name }}
+        {% if form.item_name.errors %}
+        <div class="text-danger small mt-1">{{ form.item_name.errors|join:" " }}</div>
+        {% endif %}
+      </div>
+      <div class="col-6 col-md-2">
+        <label class="ml-field-label" for="{{ form.quantity.id_for_label }}">Qty</label>
+        {{ form.quantity }}
+      </div>
+      <div class="col-6 col-md-2">
+        <label class="ml-field-label" for="{{ form.unit_price_kes.id_for_label }}">Unit price (KES)</label>
+        {{ form.unit_price_kes }}
+      </div>
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-primary w-100 ml-touch-target">
+          <i class="bi bi-check2-lg"></i> Add charge
+        </button>
+      </div>
+    </div>
+  </form>
+</div>
+
+{# ---- Credit book ledger ---- #}
+<div class="ml-card">
+  <div class="ml-card-header">
+    <span><i class="bi bi-journal-text me-1"></i> Credit book</span>
+    <span class="small">Total issued: <strong class="num-mono">KES {{ total|floatformat:2 }}</strong></span>
+  </div>
+  <div class="ml-card-body p-0 ml-table-wrap">
+    <table class="table table-hover">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Farmer</th>
+          <th>Item</th>
+          <th class="ml-currency">Qty</th>
+          <th class="ml-currency">Unit KES</th>
+          <th class="ml-currency">Total KES</th>
+          <th>Recorded by</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          <td class="small num-mono">{{ row.transaction_date }}</td>
+          <td>
+            <a href="{% url 'farmer_detail' row.farmer.pk %}">{{ row.farmer.full_name }}</a>
+            <div class="small num-mono ml-muted">{{ row.farmer.member_number }}</div>
+          </td>
+          <td>{{ row.item_name }}</td>
+          <td class="ml-currency">{{ row.quantity }}</td>
+          <td class="ml-currency">KES {{ row.unit_price_kes|floatformat:2 }}</td>
+          <td class="ml-currency fw-semibold">KES {{ row.total_amount_kes|floatformat:2 }}</td>
+          <td class="small ml-muted">{{ row.recorded_by.display_name|default:"--" }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7" class="text-center text-muted py-5">
+            <i class="bi bi-cart3 d-block fs-3 mb-2"></i>
+            No store credit recorded yet.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock content %}

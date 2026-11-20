@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block head_title %}Sign Out{% endblock head_title %}
+{% block page_title %}Sign Out{% endblock page_title %}
+
+{% block content %}
+<div class="ml-card mx-auto" style="max-width: 28rem;">
+  <div class="ml-card-body p-4 text-center">
+    <i class="bi bi-box-arrow-right text-muted" style="font-size: 3rem;"></i>
+    <h2 class="h5 fw-bold mt-3">Sign out of MaziwaLog?</h2>
+    <p class="text-muted mb-4">
+      You will need to sign in again to record deliveries or review the ledger.
+    </p>
+    <form method="post" action="{% url 'account_logout' %}">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-primary ml-touch-target">
+        <i class="bi bi-box-arrow-right"></i> Sign out
+      </button>
+      <a class="btn btn-outline-secondary ms-2" href="{% url 'dashboard' %}">Cancel</a>
+    </form>
+  </div>
+</div>
+{% endblock content %}

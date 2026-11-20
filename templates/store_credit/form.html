@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block head_title %}{{ title }}{% endblock head_title %}
+{% block page_title %}{{ title }}{% endblock page_title %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h2 class="fw-bold mb-0"><i class="bi bi-cart3 me-2"></i>{{ title }}</h2>
+    <div class="text-muted small">Charges post to the farmer's monthly statement.</div>
+  </div>
+  <a class="btn btn-outline-secondary" href="{% url 'store_credit_list' %}">Back to credit book</a>
+</div>
+
+<div class="form-panel" style="max-width: 42rem;">
+  <form method="post" action="{% url 'store_credit_create' %}">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+    <div class="alert alert-danger py-2 small">
+      <i class="bi bi-exclamation-triangle me-1"></i>{{ form.non_field_errors|join:" " }}
+    </div>
+    {% endif %}
+
+    {% for field in form %}
+    <div class="mb-3">
+      <label class="ml-field-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+      {{ field }}
+      {% if field.errors %}
+      <div class="text-danger small mt-1"><i class="bi bi-exclamation-circle"></i> {{ field.errors|join:" " }}</div>
+      {% endif %}
+    </div>
+    {% endfor %}
+
+    <button type="submit" class="btn btn-primary ml-touch-target">
+      <i class="bi bi-check2-lg"></i> Post credit sale
+    </button>
+    <a class="btn btn-outline-secondary ms-2" href="{% url 'store_credit_list' %}">Cancel</a>
+  </form>
+</div>
+{% endblock content %}

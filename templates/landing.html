@@ -1,0 +1,390 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MaziwaLog — Dairy Cooler Intake, Store Credit & M-Pesa Ledger</title>
+  <meta name="description" content="MaziwaLog is a multi-tenant dairy cooler ledger for Kenyan cooperatives: fast milk intake, agrovet store credit, month-end statements, and M-Pesa reconciliation.">
+  <link rel="icon" href="{% static 'img/favicon.ico' %}" sizes="48x48">
+  <link rel="icon" type="image/png" sizes="192x192" href="{% static 'img/favicon-192.png' %}">
+  <link rel="apple-touch-icon" href="{% static 'img/apple-touch-icon.png' %}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="{% static 'css/maziwalog.css' %}" rel="stylesheet">
+  <style>
+    /* ---- Landing-only styles not in maziwalog.css ---- */
+    :root {
+      --brand-green: #1A5C3A;
+      --brand-green-dark: #0D3B24;
+      --brand-green-light: #E8F5EE;
+      --brand-sage: #35A96E;
+    }
+    body { font-family: 'DM Sans', system-ui, sans-serif; }
+
+    /* Navbar */
+    .lp-nav { background: #fff; border-bottom: 1px solid #e5e7eb; }
+    .lp-nav .navbar-brand { font-weight: 800; font-size: 1.1rem; color: #111; gap: .55rem; }
+    .lp-nav .nav-link { color: #374151; font-weight: 500; font-size: .9rem; }
+    .lp-nav .nav-link:hover { color: var(--brand-green); }
+
+    /* Hero */
+    .lp-hero {
+      background:
+        linear-gradient(to bottom, rgba(10,33,20,.88) 0%, rgba(13,43,25,.78) 100%),
+        url('https://images.unsplash.com/photo-1500595046743-cd271d694d30?w=1600&auto=format&fit=crop&q=80')
+        center / cover no-repeat;
+      padding: 6rem 0 5rem;
+      color: #fff;
+    }
+    .lp-hero h1 { font-size: clamp(2.2rem, 5vw, 3.6rem); font-weight: 800; line-height: 1.1; letter-spacing: -.025em; }
+    .lp-hero .lead { font-size: 1.1rem; color: rgba(255,255,255,.8); line-height: 1.7; max-width: 36rem; }
+    .lp-eyebrow {
+      display: inline-block;
+      padding: .3rem .85rem;
+      background: rgba(53,169,110,.2);
+      border: 1px solid rgba(53,169,110,.4);
+      border-radius: 999px;
+      color: #7EDBA7;
+      font-size: .72rem;
+      font-weight: 700;
+      letter-spacing: .09em;
+      text-transform: uppercase;
+      margin-bottom: .9rem;
+    }
+    .lp-trust-row {
+      border-top: 1px solid rgba(255,255,255,.12);
+      padding-top: 1.35rem;
+      margin-top: 1.75rem;
+    }
+    .lp-trust-row span { color: rgba(255,255,255,.75); font-size: .85rem; }
+    .lp-trust-row i { color: #7EDBA7; }
+
+    /* Buttons */
+    .btn-brand { background: var(--brand-green); border-color: var(--brand-green); color: #fff; font-weight: 600; }
+    .btn-brand:hover { background: var(--brand-green-dark); border-color: var(--brand-green-dark); color: #fff; }
+    .btn-brand-outline { color: var(--brand-green); border-color: var(--brand-green); font-weight: 600; }
+    .btn-brand-outline:hover { background: var(--brand-green); color: #fff; }
+
+    /* Section labels */
+    .section-label { font-size: .72rem; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--brand-green); margin-bottom: .5rem; }
+    .section-h2 { font-size: clamp(1.6rem, 3vw, 2.2rem); font-weight: 800; line-height: 1.2; letter-spacing: -.018em; color: #111; }
+
+    /* Feature cards */
+    .lp-card { background: #fff; border: 1px solid #e5e7eb; border-radius: .75rem; padding: 1.65rem 1.5rem; height: 100%; transition: box-shadow .18s, border-color .18s; }
+    .lp-card:hover { box-shadow: 0 6px 20px rgba(0,0,0,.08); border-color: #c8d8ce; }
+    .lp-icon { width: 2.9rem; height: 2.9rem; border-radius: .6rem; background: var(--brand-green-light); color: var(--brand-green); font-size: 1.35rem; display: inline-flex; align-items: center; justify-content: center; margin-bottom: .95rem; }
+
+    /* Step circles */
+    .lp-step-num { width: 2.5rem; height: 2.5rem; border-radius: 50%; background: #111; color: var(--brand-sage); font-family: 'DM Mono', monospace; font-weight: 600; font-size: .95rem; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 1rem; }
+
+    /* Photo + text section */
+    .lp-about-img { width: 100%; height: 380px; object-fit: cover; border-radius: .75rem; }
+
+    /* Trust / dark band */
+    .lp-dark-band { background: #0D2B1E; padding: 5rem 0; }
+    .lp-dark-band .section-h2 { color: #fff; }
+    .lp-trust-item { display: flex; gap: .85rem; align-items: flex-start; color: rgba(255,255,255,.8); }
+    .lp-trust-item i { color: var(--brand-sage); font-size: 1.3rem; margin-top: .15rem; flex-shrink: 0; }
+    .lp-trust-item strong { color: #fff; font-size: .92rem; }
+    .lp-trust-item small { color: rgba(255,255,255,.58); }
+
+    /* CTA */
+    .lp-cta { background: #0D2B1E; padding: 5rem 0; text-align: center; }
+
+    /* Footer */
+    .lp-footer { background: #0D2B1E; border-top: 1px solid rgba(255,255,255,.08); padding: 2.5rem 0 1.5rem; }
+    .lp-footer-link { color: rgba(255,255,255,.58); text-decoration: none; font-size: .88rem; }
+    .lp-footer-link:hover { color: #fff; }
+    .lp-footer-col-title { font-size: .68rem; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: rgba(255,255,255,.35); margin-bottom: .7rem; }
+  </style>
+</head>
+<body>
+
+{# ===== NAVBAR ===== #}
+<nav class="navbar navbar-expand-lg lp-nav sticky-top shadow-sm">
+  <div class="container">
+    <a class="navbar-brand d-flex align-items-center" href="{% url 'home' %}">
+      <span class="ml-brand-mark me-2"><img src="{% static 'img/maziwalog-logo.png' %}" alt=""></span>
+      MaziwaLog
+    </a>
+    <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#lpNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="lpNav">
+      <ul class="navbar-nav me-auto ms-3 gap-1">
+        <li class="nav-item"><a class="nav-link px-2" href="#features">Features</a></li>
+        <li class="nav-item"><a class="nav-link px-2" href="#how-it-works">How it works</a></li>
+        <li class="nav-item"><a class="nav-link px-2" href="#security">Security</a></li>
+      </ul>
+      <div class="d-flex gap-2 mt-2 mt-lg-0">
+        {% if user.is_authenticated %}
+        <a class="btn btn-brand px-4" href="{% url 'dashboard' %}">
+          <i class="bi bi-grid-1x2 me-1"></i>Dashboard
+        </a>
+        {% else %}
+        <a class="btn btn-outline-secondary px-3" href="{% url 'account_login' %}">Sign in</a>
+        <a class="btn btn-brand px-4" href="{% url 'account_signup' %}">Get started</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</nav>
+
+{# ===== HERO — full-width text, no right widget ===== #}
+<header class="lp-hero">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-8 text-center">
+        <div class="lp-eyebrow">Kenyan Dairy Cooperatives</div>
+        <h1 class="mb-3">Every litre tracked.<br>Every shilling accounted for.</h1>
+        <p class="lead mb-4 mx-auto">
+          MaziwaLog replaces paper ledgers with a single accountable record for milk intake,
+          agrovet store credit, and M-Pesa reconciliation — built for Kenyan dairy coolers.
+        </p>
+        <div class="d-flex flex-wrap gap-3 justify-content-center">
+          {% if user.is_authenticated %}
+          <a class="btn btn-brand btn-lg px-5 py-2" href="{% url 'dashboard' %}">
+            <i class="bi bi-grid-1x2 me-2"></i>Open Dashboard
+          </a>
+          {% else %}
+          <a class="btn btn-brand btn-lg px-5 py-2" href="{% url 'account_signup' %}">Get started free</a>
+          <a class="btn btn-outline-light btn-lg px-4 py-2" href="{% url 'account_login' %}">Sign in</a>
+          {% endif %}
+        </div>
+        <div class="d-flex flex-wrap gap-4 justify-content-center lp-trust-row">
+          <span class="d-flex align-items-center gap-2"><i class="bi bi-shield-check"></i> Strict tenant isolation</span>
+          <span class="d-flex align-items-center gap-2"><i class="bi bi-phone"></i> Daraja M-Pesa</span>
+          <span class="d-flex align-items-center gap-2"><i class="bi bi-file-earmark-pdf"></i> PDF statements</span>
+          <span class="d-flex align-items-center gap-2"><i class="bi bi-lock"></i> Role-based access</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+{# ===== FEATURES ===== #}
+<section class="py-5 py-lg-6" id="features" style="scroll-margin-top:72px;">
+  <div class="container">
+    <div class="text-center mb-5">
+      <div class="section-label">What's included</div>
+      <h2 class="section-h2">One ledger for the whole cooler</h2>
+      <p class="text-muted mt-2 mx-auto" style="max-width:38rem;">Built for intake clerks, cooperative managers, and registered farmers.</p>
+    </div>
+    <div class="row g-4">
+      <div class="col-md-6 col-lg-3">
+        <div class="lp-card">
+          <div class="lp-icon"><i class="bi bi-clipboard2-pulse"></i></div>
+          <h3 class="h6 fw-bold mb-2">Fast milk intake</h3>
+          <p class="text-muted small mb-0">Morning and evening weigh-ins with accepted/rejected litres and mandatory quality reasons.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-3">
+        <div class="lp-card">
+          <div class="lp-icon"><i class="bi bi-cart3"></i></div>
+          <h3 class="h6 fw-bold mb-2">Agrovet store credit</h3>
+          <p class="text-muted small mb-0">Supplies charged on credit and deducted automatically at month-end payout.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-3">
+        <div class="lp-card">
+          <div class="lp-icon"><i class="bi bi-phone"></i></div>
+          <h3 class="h6 fw-bold mb-2">Daraja M-Pesa</h3>
+          <p class="text-muted small mb-0">STK Push repayment, real-time status polling, and idempotent receipt capture.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-3">
+        <div class="lp-card">
+          <div class="lp-icon"><i class="bi bi-file-earmark-spreadsheet"></i></div>
+          <h3 class="h6 fw-bold mb-2">Month-end statements</h3>
+          <p class="text-muted small mb-0">Litres × rate minus credit equals a printable, auditable net payout statement.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{# ===== ABOUT PHOTO + TEXT ===== #}
+<section class="py-5 py-lg-6 bg-white border-top border-bottom">
+  <div class="container">
+    <div class="row g-5 align-items-center">
+      <div class="col-lg-5">
+        <img
+          src="https://images.unsplash.com/photo-1560493676-04071c5f467b?w=900&auto=format&fit=crop&q=80"
+          alt="Farmer delivering milk at a collection centre"
+          class="lp-about-img shadow-sm">
+      </div>
+      <div class="col-lg-7">
+        <div class="section-label">Designed for the field</div>
+        <h2 class="section-h2 mb-3">Replacing handwritten passbooks with transparent governance.</h2>
+        <p class="text-muted lh-lg" style="font-size:.97rem;">
+          MaziwaLog disciplines the administration of Kenyan dairy cooler banking, giving the
+          Chairperson, Treasurer, Secretary, and every registered farmer a shared,
+          tamper-resistant financial record — accessible from any device.
+        </p>
+        <div class="row g-3 mt-2">
+          {% for point in "0123"|make_list %}
+          {% endfor %}
+          <div class="col-sm-6 d-flex align-items-start gap-2">
+            <i class="bi bi-check-circle-fill flex-shrink-0 mt-1" style="color:var(--brand-sage);"></i>
+            <span class="text-muted small">One cooler workspace can never see another's data.</span>
+          </div>
+          <div class="col-sm-6 d-flex align-items-start gap-2">
+            <i class="bi bi-check-circle-fill flex-shrink-0 mt-1" style="color:var(--brand-sage);"></i>
+            <span class="text-muted small">Non-custodial — funds flow via the co-op's own Till/Paybill.</span>
+          </div>
+          <div class="col-sm-6 d-flex align-items-start gap-2">
+            <i class="bi bi-check-circle-fill flex-shrink-0 mt-1" style="color:var(--brand-sage);"></i>
+            <span class="text-muted small">High-contrast tables legible under bright collection-yard light.</span>
+          </div>
+          <div class="col-sm-6 d-flex align-items-start gap-2">
+            <i class="bi bi-check-circle-fill flex-shrink-0 mt-1" style="color:var(--brand-sage);"></i>
+            <span class="text-muted small">Numpad-friendly intake and large touch targets for field clerks.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{# ===== HOW IT WORKS ===== #}
+<section class="py-5 py-lg-6" id="how-it-works" style="scroll-margin-top:72px;">
+  <div class="container">
+    <div class="text-center mb-5">
+      <div class="section-label">Process</div>
+      <h2 class="section-h2">From the dock to the payout</h2>
+      <p class="text-muted mt-2">Three clear steps, same numbers end to end.</p>
+    </div>
+    <div class="row g-4">
+      <div class="col-md-4">
+        <div class="lp-card">
+          <div class="lp-step-num">01</div>
+          <h3 class="h6 fw-bold mb-2">Record the delivery</h3>
+          <p class="text-muted small mb-0">Pick the farmer, choose AM or PM session, enter accepted and rejected litres. Rejections require a reason.</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="lp-card">
+          <div class="lp-step-num">02</div>
+          <h3 class="h6 fw-bold mb-2">Track credit and earnings</h3>
+          <p class="text-muted small mb-0">Store credit charges and M-Pesa repayments post to the same ledger so balances stay current.</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="lp-card">
+          <div class="lp-step-num">03</div>
+          <h3 class="h6 fw-bold mb-2">Reconcile and pay</h3>
+          <p class="text-muted small mb-0">Generate month-end statements, settle via the co-op's own Till/Paybill, and attach the receipt.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{# ===== TRUST BAND ===== #}
+<section class="lp-dark-band" id="security" style="scroll-margin-top:72px;">
+  <div class="container">
+    <div class="row g-5 align-items-center">
+      <div class="col-lg-5">
+        <h2 class="section-h2 mb-3">Built for field conditions and real money.</h2>
+        <p style="color:rgba(255,255,255,.68);line-height:1.7;font-size:.97rem;">
+          Fast entry, legible totals, and every shilling traceable to a farmer and a Daraja receipt.
+        </p>
+        {% if not user.is_authenticated %}
+        <a class="btn btn-brand mt-4 px-4 py-2" href="{% url 'account_signup' %}">Start for free</a>
+        {% endif %}
+      </div>
+      <div class="col-lg-7">
+        <div class="row g-4">
+          <div class="col-sm-6">
+            <div class="lp-trust-item">
+              <i class="bi bi-lock"></i>
+              <div><strong class="d-block">Tenant isolation</strong><small>One cooler never sees another's ledger.</small></div>
+            </div>
+          </div>
+          <div class="col-sm-6">
+            <div class="lp-trust-item">
+              <i class="bi bi-safe2"></i>
+              <div><strong class="d-block">Non-custodial payments</strong><small>Funds settle via the co-op's own Till/Paybill.</small></div>
+            </div>
+          </div>
+          <div class="col-sm-6">
+            <div class="lp-trust-item">
+              <i class="bi bi-brightness-high"></i>
+              <div><strong class="d-block">Daylight legible</strong><small>High-contrast tables and explicit units at the yard.</small></div>
+            </div>
+          </div>
+          <div class="col-sm-6">
+            <div class="lp-trust-item">
+              <i class="bi bi-patch-check"></i>
+              <div><strong class="d-block">Role-based access</strong><small>Manager, Clerk, and Farmer views separated cleanly.</small></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{# ===== CLOSING CTA ===== #}
+<section class="lp-cta">
+  <div class="container">
+    <h2 class="section-h2 mb-3">Ready to retire the paper slip?</h2>
+    <p style="color:rgba(255,255,255,.65);font-size:1rem;max-width:34rem;margin:0 auto 2rem;">Open your cooler workspace and start recording deliveries today.</p>
+    {% if user.is_authenticated %}
+    <a class="btn btn-brand btn-lg px-5 py-2" href="{% url 'dashboard' %}">
+      <i class="bi bi-grid-1x2 me-2"></i>Open Dashboard
+    </a>
+    {% else %}
+    <div class="d-flex gap-3 justify-content-center flex-wrap">
+      <a class="btn btn-brand btn-lg px-5 py-2" href="{% url 'account_signup' %}">Create account</a>
+      <a class="btn btn-outline-light btn-lg px-4 py-2" href="{% url 'account_login' %}">Sign in</a>
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+{# ===== FOOTER ===== #}
+<footer class="lp-footer">
+  <div class="container">
+    <div class="row g-4">
+      <div class="col-lg-4">
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <span class="ml-brand-mark"><img src="{% static 'img/maziwalog-logo.png' %}" alt=""></span>
+          <span class="fw-bold text-white">MaziwaLog</span>
+        </div>
+        <p style="color:rgba(255,255,255,.45);font-size:.82rem;line-height:1.65;margin-top:.6rem;">
+          Multi-tenant dairy cooler ledger for Kenyan cooperatives.<br>Non-custodial M-Pesa settlement.
+        </p>
+      </div>
+      <div class="col-6 col-lg-2 offset-lg-2">
+        <div class="lp-footer-col-title">Platform</div>
+        <div class="d-flex flex-column gap-2">
+          <a href="#features" class="lp-footer-link">Features</a>
+          <a href="#how-it-works" class="lp-footer-link">How it works</a>
+          <a href="#security" class="lp-footer-link">Security</a>
+        </div>
+      </div>
+      <div class="col-6 col-lg-2">
+        <div class="lp-footer-col-title">Account</div>
+        <div class="d-flex flex-column gap-2">
+          <a href="{% url 'account_login' %}" class="lp-footer-link">Sign in</a>
+          <a href="{% url 'account_signup' %}" class="lp-footer-link">Create account</a>
+          <a href="{% url 'account_reset_password' %}" class="lp-footer-link">Reset password</a>
+        </div>
+      </div>
+    </div>
+    <hr style="border-color:rgba(255,255,255,.08);margin-top:2rem;">
+    <div class="d-flex flex-wrap justify-content-between gap-2" style="font-size:.78rem;color:rgba(255,255,255,.3);">
+      <span>© {% now "Y" %} MaziwaLog</span>
+      <span>Payouts via the co-op's own M-Pesa Till/Paybill</span>
+    </div>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

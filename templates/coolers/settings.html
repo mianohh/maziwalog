@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block head_title %}Cooler Settings{% endblock head_title %}
+{% block page_title %}Cooler Settings{% endblock page_title %}
+
+{% block content %}
+<div class="row g-3">
+
+  <div class="col-lg-5">
+    <div class="form-panel">
+      <h3><i class="bi bi-activity me-1"></i> Set daily milk rate</h3>
+      <form method="post" action="{% url 'cooler_settings' %}">
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+        <div class="alert alert-danger py-2 small">
+          <i class="bi bi-exclamation-triangle me-1"></i>{{ form.non_field_errors|join:" " }}
+        </div>
+        {% endif %}
+        {% for field in form %}
+        <div class="mb-3">
+          <label class="ml-field-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% if field.errors %}
+          <div class="text-danger small mt-1"><i class="bi bi-exclamation-circle"></i> {{ field.errors|join:" " }}</div>
+          {% endif %}
+        </div>
+        {% endfor %}
+        <button type="submit" class="btn btn-primary w-100 ml-touch-target">
+          <i class="bi bi-check2-lg"></i> Save rate
+        </button>
+      </form>
+    </div>
+
+    <div class="ml-card mt-3">
+      <div class="ml-card-header"><span><i class="bi bi-building me-1"></i> Workspace</span></div>
+      <div class="ml-card-body">
+        <table class="table table-sm mb-0">
+          <tbody>
+            <tr>
+              <th class="text-muted small text-uppercase" style="width: 45%;">Cooler</th>
+              <td>{{ cooler.name }}</td>
+            </tr>
+            <tr>
+              <th class="text-muted small text-uppercase">County</th>
+              <td>{{ cooler.county|default:"--" }}</td>
+            </tr>
+            <tr>
+              <th class="text-muted small text-uppercase">Till / Paybill</th>
+              <td class="num-mono">{{ cooler.till_or_paybill|default:"--" }}</td>
+            </tr>
+            <tr>
+              <th class="text-muted small text-uppercase">Subscription</th>
+              <td>
+                {% if cooler.is_subscription_active %}
+                <span class="ml-pill ml-pill-success"><i class="bi bi-check-circle"></i> Active</span>
+                {% else %}
+                <span class="ml-pill ml-pill-danger"><i class="bi bi-x-circle"></i> Inactive</span>
+                {% endif %}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-7">
+    <div class="ml-card">
+      <div class="ml-card-header">
+        <span><i class="bi bi-clock-history me-1"></i> Rate history</span>
+        <span class="small ml-muted">{{ rates|length }} entry(ies)</span>
+      </div>
+      <div class="ml-card-body p-0 ml-table-wrap">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>Effective date</th>
+              <th class="ml-currency">Rate per litre</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in rates %}
+            <tr>
+              <td class="num-mono">{{ r.effective_date }}</td>
+              <td class="ml-currency">KES {{ r.rate_per_litre_kes|floatformat:2 }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="2" class="text-center text-muted py-4">
+                <i class="bi bi-activity d-block fs-3 mb-2"></i>
+                No rates configured yet. The engine defaults to KES 50.00 per litre.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock content %}

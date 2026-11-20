@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block head_title %}No Workspace{% endblock head_title %}
+{% block page_title %}No Active Workspace{% endblock page_title %}
+
+{% block content %}
+<div class="ml-card mx-auto" style="max-width: 34rem;">
+  <div class="ml-card-body p-4 text-center">
+    <i class="bi bi-building text-muted" style="font-size: 3rem;"></i>
+    <h2 class="h5 fw-bold mt-3">You are not linked to a cooler yet</h2>
+    <p class="text-muted mb-3">
+      Ask a cooler manager to add you from <strong>Coolers - Members</strong> in the
+      workspace settings. Once you are added, this ledger opens automatically.
+    </p>
+    <a class="btn btn-primary ml-touch-target" href="{% url 'account_logout' %}">
+      <i class="bi bi-box-arrow-right"></i> Sign out
+    </a>
+  </div>
+</div>
+{% endblock content %}

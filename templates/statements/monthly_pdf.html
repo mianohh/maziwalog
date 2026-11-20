@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% block head_title %}Statement {{ statement.farmer.member_number }}{% endblock head_title %}
+{% block page_title %}Monthly Milk Statement{% endblock page_title %}
+
+{% block content %}
+
+{# ---- Action bar (hidden in print) ---- #}
+<div class="d-flex flex-wrap gap-2 justify-content-end mb-3 ml-no-print">
+  <a href="{% url 'statement_list' %}?year={{ statement.year }}&amp;month={{ statement.month }}"
+     class="btn btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i> Back to statements
+  </a>
+  <a href="{% url 'statement_pdf' statement.pk %}" class="btn btn-primary">
+    <i class="bi bi-file-earmark-pdf me-1"></i> Download PDF
+  </a>
+  <button type="button" class="btn btn-outline-secondary" onclick="window.print()">
+    <i class="bi bi-printer me-1"></i> Print
+  </button>
+</div>
+
+<div class="mx-auto" style="max-width: 820px;">
+
+  {# ---- Statement header (visible in print) ---- #}
+  <div class="d-flex flex-wrap justify-content-between align-items-start border-bottom pb-3 mb-3">
+    <div>
+      <h3 class="fw-bold mb-1">MaziwaLog</h3>
+      <div class="small ml-muted">{{ statement.cooler.name }} - {{ statement.cooler.county }}</div>
+    </div>
+    <div class="text-end">
+      <div class="fw-semibold">Monthly Milk &amp; Credit Statement</div>
+      <div class="small ml-muted">{{ statement.month_name }}</div>
+      <div class="small ml-muted">Generated {{ statement.generated_at|date:"d M Y H:i" }}</div>
+    </div>
+  </div>
+
+  <div class="row g-3 mb-3">
+    <div class="col-sm-6">
+      <div class="small ml-muted text-uppercase">Farmer</div>
+      <div class="fw-semibold">{{ statement.farmer.full_name }}</div>
+      <div class="small num-mono">Member {{ statement.farmer.member_number }}</div>
+    </div>
+    <div class="col-sm-6 text-sm-end">
+      <div class="small ml-muted text-uppercase">Statement period</div>
+      <div class="fw-semibold">{{ statement.month_name }}</div>
+    </div>
+  </div>
+
+  {# ---- Earnings summary ---- #}
+  <div class="ml-card mb-3">
+    <div class="ml-card-header">
+      <span><i class="bi bi-calculator me-1"></i> Earnings summary</span>
+    </div>
+    <div class="ml-card-body p-0 ml-table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th class="ml-currency">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Accepted litres</td>
+            <td class="ml-volume">{{ statement.total_accepted_litres|floatformat:2 }} L</td>
+          </tr>
+          <tr>
+            <td>Applied rate</td>
+            <td class="ml-currency">KES {{ statement.applied_rate_kes|floatformat:2 }}</td>
+          </tr>
+          <tr>
+            <td>Gross earnings</td>
+            <td class="ml-currency">KES {{ statement.gross_earnings_kes|floatformat:2 }}</td>
+          </tr>
+          <tr>
+            <td>Store credit deducted</td>
+            <td class="ml-currency">-KES {{ statement.store_credit_deducted_kes|floatformat:2 }}</td>
+          </tr>
+          <tr class="fw-bold">
+            <td>Net payout</td>
+            <td class="ml-currency">KES {{ statement.net_payout_kes|floatformat:2 }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {# ---- Payout status ---- #}
+  <div class="d-flex flex-wrap justify-content-between align-items-center border-bottom pb-3 mb-3">
+    <div>
+      <div class="small ml-muted text-uppercase">Payout status</div>
+      {% if statement.payout_status == 'PAID' %}
+      <span class="ml-pill ml-pill-success"><i class="bi bi-check-circle"></i> {{ statement.get_payout_status_display }}</span>
+      {% elif statement.payout_status == 'DEBT_CARRYOVER' %}
+      <span class="ml-pill ml-pill-danger"><i class="bi bi-exclamation-triangle"></i> {{ statement.get_payout_status_display }}</span>
+      {% else %}
+      <span class="ml-pill ml-pill-pending"><i class="bi bi-hourglass-split"></i> {{ statement.get_payout_status_display }}</span>
+      {% endif %}
+    </div>
+    {% if statement.coop_mpesa_payout_receipt %}
+    <div class="text-end">
+      <div class="small ml-muted text-uppercase">Payout receipt</div>
+      <div class="num-mono fw-semibold">{{ statement.coop_mpesa_payout_receipt }}</div>
+    </div>
+    {% endif %}
+  </div>
+
+  {# ---- Deductions and payments ---- #}
+  <div class="ml-card mb-3">
+    <div class="ml-card-header">
+      <span><i class="bi bi-credit-card me-1"></i> Deductions &amp; payments</span>
+    </div>
+    <div class="ml-card-body p-0 ml-table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th>Detail</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Store credit deducted</td>
+            <td class="ml-currency">-KES {{ statement.store_credit_deducted_kes|floatformat:2 }}</td>
+          </tr>
+          <tr>
+            <td>Co-op M-Pesa payout receipt</td>
+            <td class="num-mono">{{ statement.coop_mpesa_payout_receipt|default:"--" }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {# ---- Non-custodial notice ---- #}
+  <div class="ml-card">
+    <div class="ml-card-body small">
+      <i class="bi bi-shield-check me-1"></i>
+      <strong>Non-custodial notice:</strong> MaziwaLog does not hold co-op funds. The co-op pays
+      this statement from its own M-Pesa Till/Paybill, then records the receipt code against the
+      farmer's statement.
+    </div>
+  </div>
+
+</div>
+{% endblock content %}

@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+{% block head_title %}{{ farmer.full_name }}{% endblock head_title %}
+{% block page_title %}{{ farmer.full_name }}{% endblock page_title %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h2 class="fw-bold mb-0"><i class="bi bi-person-badge me-2"></i>{{ farmer.full_name }}</h2>
+    <div class="text-muted small">
+      Member <span class="num-mono">{{ farmer.member_number }}</span>
+      {% if not farmer.is_active %}
+      <span class="ml-pill ml-pill-danger"><i class="bi bi-x-circle"></i> Inactive</span>
+      {% endif %}
+    </div>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{% url 'farmer_list' %}" class="btn btn-outline-secondary">All farmers</a>
+  </div>
+</div>
+
+{# ---- Profile strip ---- #}
+<div class="ml-card mb-3">
+  <div class="ml-card-body">
+    <div class="row g-3">
+      <div class="col-6 col-xl-2">
+        <div class="ml-kpi accent-primary">
+          <div class="ml-kpi-label">Member Number</div>
+          <div class="ml-kpi-value num-mono">{{ farmer.member_number }}</div>
+        </div>
+      </div>
+      <div class="col-6 col-xl-2">
+        <div class="ml-kpi accent-primary">
+          <div class="ml-kpi-label">Phone</div>
+          <div class="ml-kpi-value num-mono">{{ farmer.phone_number }}</div>
+        </div>
+      </div>
+      <div class="col-6 col-xl-2">
+        <div class="ml-kpi accent-success">
+          <div class="ml-kpi-label">MTD Accepted Litres</div>
+          <div class="ml-kpi-value ml-volume">{{ summary.accepted_litres|floatformat:2 }} L</div>
+        </div>
+      </div>
+      <div class="col-6 col-xl-2">
+        <div class="ml-kpi accent-primary">
+          <div class="ml-kpi-label">Gross Milk Earnings</div>
+          <div class="ml-kpi-value ml-currency">KES {{ summary.gross_kes|floatformat:2 }}</div>
+        </div>
+      </div>
+      <div class="col-6 col-xl-2">
+        <div class="ml-kpi accent-danger">
+          <div class="ml-kpi-label">Unpaid Store Credit</div>
+          <div class="ml-kpi-value ml-currency">KES {{ summary.unpaid_credit_kes|floatformat:2 }}</div>
+        </div>
+      </div>
+      <div class="col-6 col-xl-2">
+        <div class="ml-kpi accent-warning">
+          <div class="ml-kpi-label">Estimated Net Payout</div>
+          <div class="ml-kpi-value ml-currency">KES {{ summary.net_kes|floatformat:2 }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# ---- Deliveries + side cards ---- #}
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="ml-card">
+      <div class="ml-card-header">
+        <span><i class="bi bi-droplet me-1"></i> Milk deliveries</span>
+      </div>
+      <div class="ml-card-body p-0 ml-table-wrap">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Session</th>
+              <th class="ml-volume">Accepted</th>
+              <th>Rejected</th>
+              <th>Reason</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for entry in intakes %}
+            <tr {% if entry.rejected_litres > 0 %}class="ml-row-exception"{% endif %}>
+              <td class="num-mono">{{ entry.collection_date }}</td>
+              <td>
+                <span class="ml-pill {% if entry.session == 'MORNING' %}ml-pill-pending{% else %}ml-pill-success{% endif %}">
+                  <i class="bi {% if entry.session == 'MORNING' %}bi-sunrise{% else %}bi-sunset{% endif %}"></i>
+                  {{ entry.get_session_display }}
+                </span>
+              </td>
+              <td class="ml-volume"><i class="bi bi-check-circle"></i> {{ entry.accepted_litres|floatformat:2 }} L</td>
+              <td>
+                {% if entry.rejected_litres > 0 %}
+                <span class="ml-pill ml-pill-danger"><i class="bi bi-x-circle"></i> {{ entry.rejected_litres|floatformat:2 }} L</span>
+                {% else %}
+                <span class="ml-muted">{{ entry.rejected_litres|floatformat:2 }} L</span>
+                {% endif %}
+              </td>
+              <td class="small">{{ entry.rejection_reason|default:"--" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="5" class="text-center text-muted py-4">
+                <i class="bi bi-inbox d-block fs-3 mb-2"></i>
+                No milk deliveries recorded yet.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="ml-card">
+      <div class="ml-card-header">
+        <span><i class="bi bi-cart3 me-1"></i> Store credit purchases</span>
+      </div>
+      <div class="ml-card-body p-0 ml-table-wrap">
+        <table class="table table-hover table-sm">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Item</th>
+              <th>Qty</th>
+              <th class="ml-currency">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for txn in credits %}
+            <tr>
+              <td class="num-mono">{{ txn.transaction_date }}</td>
+              <td>{{ txn.item_name }}</td>
+              <td class="num-mono">{{ txn.quantity|floatformat:2 }}</td>
+              <td class="ml-currency">KES {{ txn.total_amount_kes|floatformat:2 }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="4" class="text-center text-muted py-4">
+                <i class="bi bi-inbox d-block fs-3 mb-2"></i>
+                No store credit purchases yet.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="ml-card mt-3">
+      <div class="ml-card-header">
+        <span><i class="bi bi-file-earmark-text me-1"></i> Monthly statements</span>
+      </div>
+      <div class="ml-card-body p-0 ml-table-wrap">
+        <table class="table table-hover table-sm">
+          <thead>
+            <tr>
+              <th>Period</th>
+              <th class="ml-currency">Net payout</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for statement in statements %}
+            <tr>
+              <td class="num-mono">{{ statement.month_name }}</td>
+              <td class="ml-currency">KES {{ statement.net_payout_kes|floatformat:2 }}</td>
+              <td>
+                {% if statement.payout_status == 'PAID' %}
+                <span class="ml-pill ml-pill-success"><i class="bi bi-check-circle"></i> {{ statement.get_payout_status_display }}</span>
+                {% elif statement.payout_status == 'DEBT_CARRYOVER' %}
+                <span class="ml-pill ml-pill-danger"><i class="bi bi-exclamation-triangle"></i> {{ statement.get_payout_status_display }}</span>
+                {% else %}
+                <span class="ml-pill ml-pill-pending"><i class="bi bi-hourglass-split"></i> {{ statement.get_payout_status_display }}</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="3" class="text-center text-muted py-4">
+                <i class="bi bi-inbox d-block fs-3 mb-2"></i>
+                No statements generated yet.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="mt-3">
+  <a href="{% url 'statement_list' %}">Reconcile month-end <i class="bi bi-arrow-right"></i></a>
+</div>
+{% endblock content %}

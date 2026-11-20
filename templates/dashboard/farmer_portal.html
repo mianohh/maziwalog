@@ -1,0 +1,259 @@
+{% extends "base.html" %}
+{% load static %}
+{% block head_title %}My Portal{% endblock head_title %}
+{% block page_title %}Farmer Portal{% endblock page_title %}
+
+{% block content %}
+
+{# ---- Profile summary ---- #}
+<div class="ledger-hero mb-4">
+  <div class="row g-4 align-items-center">
+    <div class="col-md-5">
+      <div class="ml-kpi-label">Estimated net payout for {{ month_label }}</div>
+      <div class="ml-kpi-value num-mono" style="font-size: 2.15rem;">KES {{ summary.net_kes|floatformat:2 }}</div>
+      <div class="small mt-2">
+        <i class="bi bi-person-badge"></i>
+        Member <strong class="num-mono">{{ farmer.member_number }}</strong>
+        &middot; Phone <strong class="num-mono">{{ farmer.phone_number }}</strong>
+      </div>
+      <div class="small">
+        {{ summary.accepted_litres|floatformat:2 }} L accepted at
+        KES {{ summary.rate_per_litre_kes|floatformat:2 }}/L this month.
+      </div>
+    </div>
+    <div class="col-md-7">
+      <div class="row g-3">
+        <div class="col-6">
+          <div class="ml-kpi-label">Month-to-date accepted</div>
+          <div class="fw-bold num-mono fs-5">{{ summary.accepted_litres|floatformat:2 }} L</div>
+        </div>
+        <div class="col-6">
+          <div class="ml-kpi-label">Gross milk earnings</div>
+          <div class="fw-bold num-mono fs-5">KES {{ summary.gross_kes|floatformat:2 }}</div>
+        </div>
+        <div class="col-6">
+          <div class="ml-kpi-label">Unpaid store credit</div>
+          <div class="fw-bold num-mono fs-5">KES {{ summary.unpaid_credit_kes|floatformat:2 }}</div>
+        </div>
+        <div class="col-6">
+          <div class="ml-kpi-label">Debt repaid this month</div>
+          <div class="fw-bold num-mono fs-5">KES {{ summary.debt_repaid_kes|floatformat:2 }}</div>
+        </div>
+      </div>
+      <div class="mt-3">
+        <button type="button" class="btn btn-light fw-semibold ml-touch-target" data-bs-toggle="modal" data-bs-target="#stkModal">
+          <i class="bi bi-phone"></i> Pay Store Debt via M-Pesa
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# ---- Store credit breakdown: purchases vs repayments ---- #}
+<div class="row g-3 mb-4">
+  <div class="col-lg-6">
+    <div class="ml-card h-100">
+      <div class="ml-card-header"><span><i class="bi bi-cart3 me-1"></i> Agrovet purchases (store credit)</span></div>
+      <div class="ml-card-body p-0 ml-table-wrap">
+        <table class="table table-sm table-hover">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Item</th>
+              <th class="ml-currency">Qty</th>
+              <th class="ml-currency">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in credits %}
+            <tr>
+              <td class="small num-mono">{{ c.transaction_date }}</td>
+              <td>{{ c.item_name }}</td>
+              <td class="ml-currency">{{ c.quantity }}</td>
+              <td class="ml-currency">KES {{ c.total_amount_kes|floatformat:2 }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="text-center text-muted py-4">No store credit purchases.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="ml-card h-100">
+      <div class="ml-card-header"><span><i class="bi bi-phone me-1"></i> M-Pesa repayments</span></div>
+      <div class="ml-card-body p-0 ml-table-wrap">
+        <table class="table table-sm table-hover">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Receipt</th>
+              <th class="ml-currency">Amount</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in repayments %}
+            <tr>
+              <td class="small num-mono">{{ r.created_at|date:"d M Y" }}</td>
+              <td class="small num-mono">{{ r.mpesa_receipt_number|default:"--" }}</td>
+              <td class="ml-currency">KES {{ r.amount_kes|floatformat:2 }}</td>
+              <td>
+                {% if r.status == 'SUCCESS' %}
+                <span class="ml-pill ml-pill-success"><i class="bi bi-check-circle"></i> {{ r.get_status_display }}</span>
+                {% elif r.status == 'PENDING' %}
+                <span class="ml-pill ml-pill-pending"><i class="bi bi-hourglass-split"></i> {{ r.get_status_display }}</span>
+                {% else %}
+                <span class="ml-pill ml-pill-danger"><i class="bi bi-x-circle"></i> {{ r.get_status_display }}</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="text-center text-muted py-4">No M-Pesa repayments yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# ---- Deliveries + statements ---- #}
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="ml-card">
+      <div class="ml-card-header"><span><i class="bi bi-droplet me-1"></i> My milk deliveries</span></div>
+      <div class="ml-card-body p-0 ml-table-wrap">
+        <table class="table table-sm table-hover">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Session</th>
+              <th class="ml-currency">Accepted</th>
+              <th class="ml-currency">Rejected</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for e in intakes %}
+            <tr {% if e.rejected_litres %}class="ml-row-exception"{% endif %}>
+              <td class="small num-mono">{{ e.collection_date }}</td>
+              <td>{{ e.get_session_display }}</td>
+              <td class="ml-volume ml-currency"><i class="bi bi-check-circle"></i> {{ e.accepted_litres|floatformat:2 }} L</td>
+              <td class="ml-currency">
+                {% if e.rejected_litres %}
+                <span class="ml-pill ml-pill-danger"><i class="bi bi-x-circle"></i> {{ e.rejected_litres|floatformat:2 }} L</span>
+                {% else %}
+                <span class="ml-muted">{{ e.rejected_litres|floatformat:2 }} L</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="text-center text-muted py-4">No deliveries yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="ml-card">
+      <div class="ml-card-header"><span><i class="bi bi-file-earmark-spreadsheet me-1"></i> Monthly statements</span></div>
+      <div class="ml-card-body p-0 ml-table-wrap">
+        <table class="table table-sm table-hover">
+          <thead>
+            <tr>
+              <th>Period</th>
+              <th class="ml-currency">Net payout</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in statements %}
+            <tr>
+              <td>{{ s.month_name }}</td>
+              <td class="ml-currency">KES {{ s.net_payout_kes|floatformat:2 }}</td>
+              <td>
+                {% if s.payout_status == 'PAID' %}
+                <span class="ml-pill ml-pill-success"><i class="bi bi-check-circle"></i> {{ s.get_payout_status_display }}</span>
+                {% elif s.payout_status == 'DEBT_CARRYOVER' %}
+                <span class="ml-pill ml-pill-danger"><i class="bi bi-exclamation-triangle"></i> {{ s.get_payout_status_display }}</span>
+                {% else %}
+                <span class="ml-pill ml-pill-pending"><i class="bi bi-hourglass-split"></i> {{ s.get_payout_status_display }}</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="3" class="text-center text-muted py-4">No statements generated yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# ---- Pay store debt modal ---- #}
+<div class="modal fade" id="stkModal" tabindex="-1" aria-labelledby="stkModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form id="stkForm"
+            data-stk-push-url="{% url 'api_stk_push' %}"
+            data-stk-status-url="/api/v1/payments/status/CHECKOUT_ID/">
+        <div class="modal-header">
+          <h2 class="modal-title fs-5" id="stkModalLabel">Pay store debt via M-Pesa</h2>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div id="stkStateIdle">
+            <p class="small text-muted mb-3">
+              A Daraja STK prompt will be sent to the number below. Enter your M-Pesa PIN on the handset to confirm.
+            </p>
+            <div class="alert alert-danger py-2 small d-none" id="stkError"></div>
+            <input type="hidden" id="stkMemberNumber" value="{{ farmer.member_number }}">
+            <div class="mb-3">
+              <label class="ml-field-label" for="stkPhone">M-Pesa number</label>
+              <input type="tel" class="form-control num-mono" id="stkPhone" name="phone"
+                     value="{{ farmer.phone_number }}" required>
+            </div>
+            <div class="mb-3">
+              <label class="ml-field-label" for="stkAmount">Amount (KES, whole shillings)</label>
+              <input type="number" class="form-control num-mono" id="stkAmount" name="amount"
+                     min="1" step="1" value="{{ summary.unpaid_credit_kes|floatformat:0 }}" required>
+              <div class="form-text small">Pre-filled with the unpaid store credit balance. Edit before sending.</div>
+            </div>
+          </div>
+
+          <div id="stkStatePending" class="d-none">
+            <div class="ml-stk-state">
+              <div class="ml-stk-spinner" role="status" aria-label="Payment pending"></div>
+              <div class="fw-semibold">Check your phone and enter M-Pesa PIN...</div>
+              <div class="small text-muted">Waiting for Daraja confirmation. This can take up to 45 seconds.</div>
+            </div>
+          </div>
+
+          <div id="stkStateDone" class="d-none">
+            <div class="ml-stk-state">
+              <i class="bi bi-check-circle text-success" id="stkResultIcon" style="font-size: 3rem;"></i>
+              <div class="fw-bold fs-5" id="stkResultTitle">Payment confirmed</div>
+              <div class="small text-muted" id="stkResultDetail"></div>
+              <div class="num-mono fw-semibold d-none" id="stkResultReceipt"></div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer" id="stkFooterActions">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="submit" class="btn btn-primary ml-touch-target">
+            <i class="bi bi-send"></i> Send M-Pesa Prompt
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock content %}
+
+{% block extra_body %}
+<script src="{% static 'js/stk_poller.js' %}"></script>
+{% endblock extra_body %}

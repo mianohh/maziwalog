@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block head_title %}Record Not Found{% endblock head_title %}
+{% block page_title %}Record Not Found{% endblock page_title %}
+
+{% block content %}
+<div class="ml-card mx-auto" style="max-width: 34rem;">
+  <div class="ml-card-body p-4 text-center">
+    <div class="num-mono fw-bold text-muted" style="font-size: 4rem; line-height: 1;">404</div>
+    <h2 class="h5 fw-bold mt-3">Record not found</h2>
+    <p class="text-muted mb-4">
+      That record does not exist, or it belongs to another cooler workspace.
+      One cooler can never see another's ledger.
+    </p>
+    <a class="btn btn-primary ml-touch-target" href="{% url 'dashboard' %}">
+      <i class="bi bi-speedometer2"></i> Back to dashboard
+    </a>
+  </div>
+</div>
+{% endblock content %}

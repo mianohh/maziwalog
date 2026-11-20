@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block head_title %}Transaction Status{% endblock head_title %}
+{% block page_title %}M-Pesa Transaction Status{% endblock page_title %}
+
+{% block content %}
+<div class="ml-card mx-auto" style="max-width: 42rem;">
+  <div class="ml-card-header">
+    <span><i class="bi bi-credit-card me-1"></i> Transaction details</span>
+    <a class="small ml-no-print" href="{% url 'payment_stk_push' %}">M-Pesa ledger</a>
+  </div>
+  <div class="ml-card-body">
+    <div class="row g-3 mb-3">
+      <div class="col-6">
+        <div class="ml-kpi-label">Amount</div>
+        <div class="num-mono fs-4 fw-bold">KES {{ txn.amount_kes|floatformat:2 }}</div>
+      </div>
+      <div class="col-6">
+        <div class="ml-kpi-label">Status</div>
+        <div class="mt-1">
+          {% if txn.status == 'SUCCESS' %}
+          <span class="ml-pill ml-pill-success"><i class="bi bi-check-circle"></i> {{ txn.get_status_display }}</span>
+          {% elif txn.status == 'PENDING' %}
+          <span class="ml-pill ml-pill-pending"><i class="bi bi-hourglass-split"></i> {{ txn.get_status_display }}</span>
+          {% else %}
+          <span class="ml-pill ml-pill-danger"><i class="bi bi-x-circle"></i> {{ txn.get_status_display }}</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <table class="table table-sm">
+      <tbody>
+        <tr>
+          <th class="text-muted small text-uppercase" style="width: 40%;">Checkout ID</th>
+          <td class="num-mono small">{{ txn.checkout_request_id }}</td>
+        </tr>
+        <tr>
+          <th class="text-muted small text-uppercase">Account reference</th>
+          <td class="num-mono">{{ txn.account_reference }}</td>
+        </tr>
+        <tr>
+          <th class="text-muted small text-uppercase">Phone</th>
+          <td class="num-mono">{{ txn.phone_number }}</td>
+        </tr>
+        <tr>
+          <th class="text-muted small text-uppercase">M-Pesa receipt</th>
+          <td><span data-stk-receipt>{{ txn.mpesa_receipt_number|default:"--" }}</span></td>
+        </tr>
+        <tr>
+          <th class="text-muted small text-uppercase">Result</th>
+          <td><span data-stk-desc>{{ txn.result_desc|default:"--" }}</span></td>
+        </tr>
+        <tr>
+          <th class="text-muted small text-uppercase">Live status</th>
+          <td>
+            <span class="stk-status" data-stk-status data-state="{{ txn.status }}">{{ txn.get_status_display }}</span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    {% if txn.status == 'PENDING' %}
+    <div class="alert alert-warning py-2 small mb-0" data-stk-poll="{% url 'payment_status_api' txn.checkout_request_id %}">
+      <i class="bi bi-hourglass-split me-1"></i>
+      Waiting for the Daraja callback. This page refreshes the status every few seconds.
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock content %}
+
+{% block extra_body %}
+{% if txn.status == 'PENDING' %}
+<script>
+(function () {
+  'use strict';
+  var host = document.querySelector('[data-stk-poll]');
+  if (!host) return;
+  var url = host.getAttribute('data-stk-poll');
+  var attempts = 0;
+  var MAX = 15;
+  var DELAY = 3000;
+
+  function apply(data) {
+    var statusEl = document.querySelector('[data-stk-status]');
+    var receiptEl = document.querySelector('[data-stk-receipt]');
+    var descEl = document.querySelector('[data-stk-desc]');
+    if (statusEl) {
+      statusEl.setAttribute('data-state', data.status);
+      statusEl.textContent = data.status_display || data.status;
+    }
+    if (receiptEl) receiptEl.textContent = data.mpesa_receipt_number || '--';
+    if (descEl) descEl.textContent = data.result_desc || '--';
+    if (data.status === 'PENDING' && attempts < MAX) {
+      attempts += 1;
+      setTimeout(tick, DELAY);
+    } else {
+      host.classList.add('d-none');
+    }
+  }
+
+  function tick() {
+    fetch(url, { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
+      .then(function (res) { return res.ok ? res.json() : Promise.reject(); })
+      .then(apply)
+      .catch(function () {
+        if (attempts < MAX) { attempts += 1; setTimeout(tick, DELAY); }
+      });
+  }
+
+  tick();
+})();
+</script>
+{% endif %}
+{% endblock extra_body %}

@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+{% block head_title %}Manager Dashboard{% endblock head_title %}
+{% block page_title %}Cooler Operations Overview{% endblock page_title %}
+
+{% block content %}
+
+{# ---- KPI strip ---- #}
+<div class="row g-3 mb-4">
+  <div class="col-6 col-xl-3">
+    <div class="ml-kpi accent-success">
+      <div class="ml-kpi-label">Today's accepted litres</div>
+      <div class="ml-kpi-value">{{ stats.litres_today|floatformat:2 }} L</div>
+      <div class="ml-kpi-sub">{{ month_label }} to date: {{ stats.litres_month|floatformat:2 }} L</div>
+    </div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="ml-kpi accent-danger">
+      <div class="ml-kpi-label">Today's rejected litres</div>
+      <div class="ml-kpi-value">{{ rejected_today|floatformat:2 }} L</div>
+      <div class="ml-kpi-sub">Rejection rate: {{ rejection_rate_pct|floatformat:1 }}%</div>
+    </div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="ml-kpi accent-primary">
+      <div class="ml-kpi-label">Store credit issued ({{ month_label }})</div>
+      <div class="ml-kpi-value">KES {{ stats.credit_month|floatformat:2 }}</div>
+      <div class="ml-kpi-sub">Outstanding balance: KES {{ stats.credit_outstanding|floatformat:2 }}</div>
+    </div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="ml-kpi accent-warning">
+      <div class="ml-kpi-label">Pending month-end payouts</div>
+      <div class="ml-kpi-value">KES {{ pending_payout_kes|floatformat:2 }}</div>
+      <div class="ml-kpi-sub">{{ stats.pending_statements }} statement(s) awaiting payout</div>
+    </div>
+  </div>
+</div>
+
+{# ---- Split operational grid ---- #}
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="ml-card">
+      <div class="ml-card-header">
+        <span><i class="bi bi-clipboard2-pulse me-1"></i> Recent milk intake and quality exceptions</span>
+        <a href="{% url 'clerk_intake' %}" class="small ml-no-print">Open intake ledger</a>
+      </div>
+      <div class="ml-card-body p-0 ml-table-wrap">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Session</th>
+              <th>Farmer</th>
+              <th class="ml-currency">Accepted</th>
+              <th class="ml-currency">Rejected</th>
+              <th>Reason</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for entry in recent_intakes %}
+            <tr {% if entry.rejected_litres %}class="ml-row-exception"{% endif %}>
+              <td class="small num-mono">{{ entry.collection_date }}</td>
+              <td>
+                <span class="ml-pill {% if entry.session == 'MORNING' %}ml-pill-pending{% else %}ml-pill-success{% endif %}">
+                  <i class="bi {% if entry.session == 'MORNING' %}bi-sunrise{% else %}bi-sunset{% endif %}"></i>
+                  {{ entry.get_session_display }}
+                </span>
+              </td>
+              <td>
+                <a href="{% url 'farmer_detail' entry.farmer.pk %}">{{ entry.farmer.full_name }}</a>
+                <div class="small num-mono ml-muted">{{ entry.farmer.member_number }}</div>
+              </td>
+              <td class="ml-volume ml-currency"><i class="bi bi-check-circle"></i> {{ entry.accepted_litres|floatformat:2 }} L</td>
+              <td class="ml-currency {% if entry.rejected_litres %}ml-pill-danger{% else %}ml-muted{% endif %}">
+                {% if entry.rejected_litres %}
+                <span class="ml-pill ml-pill-danger"><i class="bi bi-x-circle"></i> {{ entry.rejected_litres|floatformat:2 }} L</span>
+                {% else %}
+                {{ entry.rejected_litres|floatformat:2 }} L
+                {% endif %}
+              </td>
+              <td class="small">{{ entry.rejection_reason|default:"--" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="6" class="text-center text-muted py-4">
+                <i class="bi bi-inbox d-block fs-3 mb-2"></i>
+                No intake entries recorded yet.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="ml-card">
+      <div class="ml-card-header">
+        <span><i class="bi bi-phone me-1"></i> M-Pesa Daraja STK transactions</span>
+        <a href="{% url 'payment_stk_push' %}" class="small ml-no-print">Open M-Pesa ledger</a>
+      </div>
+      <div class="ml-card-body p-0 ml-table-wrap">
+        <table class="table table-sm">
+          <thead>
+            <tr>
+              <th>Receipt</th>
+              <th>Reference</th>
+              <th class="ml-currency">Amount</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for txn in recent_transactions %}
+            <tr>
+              <td class="small num-mono">{{ txn.mpesa_receipt_number|default:"--" }}</td>
+              <td class="small num-mono">{{ txn.account_reference }}</td>
+              <td class="ml-currency">KES {{ txn.amount_kes|floatformat:2 }}</td>
+              <td>
+                {% if txn.status == 'SUCCESS' %}
+                <span class="ml-pill ml-pill-success"><i class="bi bi-check-circle"></i> {{ txn.get_status_display }}</span>
+                {% elif txn.status == 'PENDING' %}
+                <span class="ml-pill ml-pill-pending"><i class="bi bi-hourglass-split"></i> {{ txn.get_status_display }}</span>
+                {% else %}
+                <span class="ml-pill ml-pill-danger"><i class="bi bi-x-circle"></i> {{ txn.get_status_display }}</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="4" class="text-center text-muted py-4">
+                <i class="bi bi-receipt d-block fs-3 mb-2"></i>
+                No M-Pesa transactions yet.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="ml-card mt-3">
+      <div class="ml-card-header">
+        <span><i class="bi bi-clock-history me-1"></i> Awaiting payout</span>
+      </div>
+      <ul class="list-group list-group-flush">
+        {% for s in pending_statements %}
+        <li class="list-group-item d-flex justify-content-between align-items-center px-3 py-2">
+          <div>
+            <a href="{% url 'farmer_detail' s.farmer.pk %}">{{ s.farmer.full_name }}</a>
+            <div class="small ml-muted">{{ s.month_name }}</div>
+          </div>
+          <span class="num-mono fw-semibold">KES {{ s.net_payout_kes|floatformat:2 }}</span>
+        </li>
+        {% empty %}
+        <li class="list-group-item text-muted small px-3 py-3">
+          <i class="bi bi-check2-circle me-1"></i> No statements generated for this month yet.
+        </li>
+        {% endfor %}
+      </ul>
+      {% if pending_statements %}
+      <div class="border-top px-3 py-2 small">
+        <a href="{% url 'statement_list' %}">Reconcile month-end <i class="bi bi-arrow-right"></i></a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock content %}

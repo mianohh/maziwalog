@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block head_title %}M-Pesa Ledger{% endblock head_title %}
+{% block page_title %}M-Pesa Ledger{% endblock page_title %}
+
+{% block content %}
+<div class="row g-3">
+
+  <div class="col-lg-5">
+    <div class="form-panel">
+      <h3><i class="bi bi-phone me-1"></i> Send STK Prompt</h3>
+      <form method="post" action="{% url 'payment_stk_push' %}">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+        <div class="alert alert-danger py-2 small">
+          <i class="bi bi-exclamation-triangle me-1"></i>{{ form.non_field_errors|join:" " }}
+        </div>
+        {% endif %}
+
+        <div class="mb-3">
+          <label class="ml-field-label" for="{{ form.phone_number.id_for_label }}">M-Pesa number</label>
+          {{ form.phone_number }}
+          {% if form.phone_number.errors %}
+          <div class="text-danger small mt-1"><i class="bi bi-exclamation-circle"></i> {{ form.phone_number.errors|join:" " }}</div>
+          {% endif %}
+        </div>
+
+        <div class="mb-3">
+          <label class="ml-field-label" for="{{ form.amount_kes.id_for_label }}">Amount (KES)</label>
+          {{ form.amount_kes }}
+          {% if form.amount_kes.errors %}
+          <div class="text-danger small mt-1"><i class="bi bi-exclamation-circle"></i> {{ form.amount_kes.errors|join:" " }}</div>
+          {% endif %}
+          <div class="form-text small">Whole shillings only. Enter your M-Pesa PIN on the handset when prompted.</div>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100 ml-touch-target">
+          <i class="bi bi-send"></i> Send M-Pesa Prompt
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <div class="col-lg-7">
+    <div class="ml-card">
+      <div class="ml-card-header">
+        <span><i class="bi bi-receipt me-1"></i> Recent STK transactions</span>
+        <span class="small ml-muted">{{ recent|length }} shown</span>
+      </div>
+      <div class="ml-card-body p-0 ml-table-wrap">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>Receipt</th>
+              <th>Reference</th>
+              <th class="ml-currency">Amount</th>
+              <th>Status</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for txn in recent %}
+            <tr>
+              <td class="small num-mono">{{ txn.mpesa_receipt_number|default:"--" }}</td>
+              <td class="small num-mono">{{ txn.account_reference }}</td>
+              <td class="ml-currency">KES {{ txn.amount_kes|floatformat:2 }}</td>
+              <td>
+                {% if txn.status == 'SUCCESS' %}
+                <span class="ml-pill ml-pill-success"><i class="bi bi-check-circle"></i> {{ txn.get_status_display }}</span>
+                {% elif txn.status == 'PENDING' %}
+                <span class="ml-pill ml-pill-pending"><i class="bi bi-hourglass-split"></i> {{ txn.get_status_display }}</span>
+                {% else %}
+                <span class="ml-pill ml-pill-danger"><i class="bi bi-x-circle"></i> {{ txn.get_status_display }}</span>
+                {% endif %}
+              </td>
+              <td class="small num-mono ml-muted">{{ txn.created_at|date:"d M Y H:i" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="5" class="text-center text-muted py-5">
+                <i class="bi bi-receipt d-block fs-3 mb-2"></i>
+                No M-Pesa transactions recorded yet.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock content %}
