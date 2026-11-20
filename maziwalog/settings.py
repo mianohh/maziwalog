@@ -90,10 +90,10 @@ WSGI_APPLICATION = "maziwalog.wsgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-# MySQL / MariaDB driven by DB_* environment variables.
+# PostgreSQL (Neon) driven by DB_* environment variables.
 # Set DB_ENGINE=sqlite in .env to run against a local db.sqlite3 instead.
 
-if os.getenv("DB_ENGINE", "mysql") == "sqlite":
+if os.getenv("DB_ENGINE", "postgres") == "sqlite":
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
@@ -103,16 +103,16 @@ if os.getenv("DB_ENGINE", "mysql") == "sqlite":
 else:
     DATABASES = {
         "default": {
-            "ENGINE": "django.db.backends.mysql",
-            "NAME": os.getenv("DB_NAME", "maziwalog"),
-            "USER": os.getenv("DB_USER", "root"),
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": os.getenv("DB_NAME", "neondb"),
+            "USER": os.getenv("DB_USER", ""),
             "PASSWORD": os.getenv("DB_PASSWORD", ""),
-            "HOST": os.getenv("DB_HOST", "127.0.0.1"),
-            "PORT": os.getenv("DB_PORT", "3306"),
+            "HOST": os.getenv("DB_HOST", ""),
+            "PORT": os.getenv("DB_PORT", "5432"),
             "CONN_MAX_AGE": 60,
             "OPTIONS": {
-                "charset": "utf8mb4",
-                "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
+                "sslmode": "require",
+                "channel_binding": "require",
             },
         }
     }
