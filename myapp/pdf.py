@@ -1,8 +1,7 @@
-"""
-Monthly statement PDF export.
+# Monthly statement PDF export.
 
-Uses reportlab for PDF rendering.
-"""
+# Uses reportlab for PDF rendering.
+
 
 from io import BytesIO
 

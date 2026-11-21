@@ -1,8 +1,4 @@
-"""
-Google OAuth profile hydration.
-
-Copies the Google display name into User.full_name on the first social signup.
-"""
+# Google OAuth profile hydration.
 
 from allauth.account.signals import user_signed_up
 from django.dispatch import receiver

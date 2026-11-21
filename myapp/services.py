@@ -1,16 +1,3 @@
-"""
-Month-end reconciliation & supporting services
-.
-
-Formula:
-
-    Gross Milk Earnings = Accepted Litres x Applied Rate/Litre
-    Net Payout          = Gross Milk Earnings - Store Credit Deductions
-
-MaziwaLog never holds co-op cash or executes B2C payouts: when the co-op pays
-from its own Till/Paybill the manager records the receipt against the statement.
-"""
-
 from datetime import date, datetime
 from decimal import Decimal
 
@@ -118,57 +105,80 @@ def generate_cooler_statements(cooler, year: int, month: int) -> int:
     return count
 
 
-def farmer_summary(farmer: Farmer, year: int, month: int) -> dict:
-    """Current-month position used by the farmer portal and GET summary API."""
-    accepted = (
-        MilkIntake.objects.filter(
-            cooler=farmer.cooler,
-            farmer=farmer,
-            collection_date__year=year,
-            collection_date__month=month,
-        ).aggregate(total=Sum("accepted_litres"))["total"]
-        or ZERO
-    )
-    rate = DailyMilkRate.rate_for(farmer.cooler, date(year, month, 1))
-    gross = accepted * rate
+def _month_totals(cooler, year: int, month: int):
+    """
+    Per-farmer month totals as three grouped aggregates.
 
-    credit = (
+    Returns (rate, accepted, credit, repaid) — the last three keyed by farmer_id.
+    """
+    rate = DailyMilkRate.rate_for(cooler, date(year, month, 1))
+
+    def totals(queryset, field):
+        return {
+            row["farmer_id"]: row["total"] or ZERO
+            for row in queryset.values("farmer_id").annotate(total=Sum(field))
+        }
+
+    accepted = totals(
+        MilkIntake.objects.filter(
+            cooler=cooler, collection_date__year=year, collection_date__month=month
+        ),
+        "accepted_litres",
+    )
+    credit = totals(
         StoreCreditTransaction.objects.filter(
-            cooler=farmer.cooler,
-            farmer=farmer,
-            transaction_date__year=year,
-            transaction_date__month=month,
-        ).aggregate(total=Sum("total_amount_kes"))["total"]
-        or ZERO
+            cooler=cooler, transaction_date__year=year, transaction_date__month=month
+        ),
+        "total_amount_kes",
     )
     start, end = month_bounds(year, month)
-    repaid = (
+    repaid = totals(
         MpesaTransaction.objects.filter(
-            cooler=farmer.cooler,
-            farmer=farmer,
+            cooler=cooler,
             purpose=MpesaTransaction.Purpose.STORE_DEBT,
             status=MpesaTransaction.Status.SUCCESS,
             created_at__gte=start,
             created_at__lt=end,
-        ).aggregate(total=Sum("amount_kes"))["total"]
-        or ZERO
+        ),
+        "amount_kes",
     )
-    unpaid = max(ZERO, credit - repaid)
-    net = gross - unpaid
+    return rate, accepted, credit, repaid
 
+
+def _summary_row(farmer, year: int, month: int, rate, accepted, credit, repaid) -> dict:
+    a = accepted.get(farmer.pk, ZERO)
+    c = credit.get(farmer.pk, ZERO)
+    r = repaid.get(farmer.pk, ZERO)
+    unpaid = max(ZERO, c - r)
+    gross = a * rate
     return {
         "member_number": farmer.member_number,
         "full_name": farmer.full_name,
         "year": year,
         "month": month,
-        "accepted_litres": accepted,
+        "accepted_litres": a,
         "rate_per_litre_kes": rate,
         "gross_kes": gross,
-        "store_credit_kes": credit,
-        "debt_repaid_kes": repaid,
+        "store_credit_kes": c,
+        "debt_repaid_kes": r,
         "unpaid_credit_kes": unpaid,
-        "net_kes": net,
+        "net_kes": gross - unpaid,
     }
+
+
+def farmer_summary(farmer: Farmer, year: int, month: int) -> dict:
+    """Current-month position used by the farmer portal and GET summary API."""
+    totals = _month_totals(farmer.cooler, year, month)
+    return _summary_row(farmer, year, month, *totals)
+
+
+def farmer_summaries(cooler, year: int, month: int) -> list:
+    """Current-month position for every active farmer — no per-farmer query loop."""
+    rate, accepted, credit, repaid = _month_totals(cooler, year, month)
+    return [
+        _summary_row(farmer, year, month, rate, accepted, credit, repaid)
+        for farmer in Farmer.objects.filter(cooler=cooler, is_active=True)
+    ]
 
 
 def cooler_dashboard_stats(cooler) -> dict:
@@ -194,13 +204,11 @@ def cooler_dashboard_stats(cooler) -> dict:
         ).aggregate(total=Sum("total_amount_kes"))["total"]
         or ZERO
     )
-    credit_outstanding = ZERO
-    for farmer in Farmer.objects.filter(cooler=cooler, is_active=True):
-        s = farmer_summary(farmer, today.year, today.month)
-        credit_outstanding += s["unpaid_credit_kes"]
+    summaries = farmer_summaries(cooler, today.year, today.month)
+    credit_outstanding = sum((s["unpaid_credit_kes"] for s in summaries), ZERO)
 
     return {
-        "farmers": Farmer.objects.filter(cooler=cooler, is_active=True).count(),
+        "farmers": len(summaries),
         "litres_today": litres_today,
         "litres_month": litres_month,
         "credit_month": credit_month,

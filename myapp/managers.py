@@ -1,10 +1,9 @@
-"""
-CoolerScopedManager scopes querysets to one cooler workspace.
+# CoolerScopedManager scopes querysets to one cooler workspace.
 
-Query-level tenant isolation helper: a queryset created through
-``Cooler.objects.for_cooler(cooler)``-style scoping can only ever see rows
-belonging to one cooler, so a leaked ``cooler_id`` cannot cross workspaces.
-"""
+# Query-level tenant isolation helper: a queryset created through
+# ``Cooler.objects.for_cooler(cooler)``-style scoping can only ever see rows
+# belonging to one cooler, so a leaked ``cooler_id`` cannot cross workspaces.
+
 
 from django.db import models
 

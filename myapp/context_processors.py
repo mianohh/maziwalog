@@ -1,4 +1,4 @@
-"""Template context: active workspace, memberships and role badges."""
+# Template context: active workspace, memberships and role badges.
 
 from .models import DailyMilkRate, Membership
 

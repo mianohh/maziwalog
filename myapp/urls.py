@@ -1,4 +1,4 @@
-"""Web URL routing for MaziwaLog."""
+# Web URL routing for MaziwaLog.
 
 from django.urls import path
 

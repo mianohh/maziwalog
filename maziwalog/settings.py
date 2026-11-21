@@ -1,4 +1,4 @@
-"""Django settings for the MaziwaLog project."""
+# Django settings for the MaziwaLog project.
 
 import os
 from pathlib import Path
@@ -14,6 +14,13 @@ load_dotenv(BASE_DIR / ".env")
 
 def env_bool(name: str, default: bool = False) -> bool:
     return os.getenv(name, str(default)).strip().lower() in {"1", "true", "yes", "on"}
+
+
+def env_int(name: str, default: int) -> int:
+    try:
+        return int(os.getenv(name, "").strip() or default)
+    except ValueError:
+        return default
 
 
 # Quick-start development settings - unsuitable for production
@@ -72,7 +79,7 @@ ROOT_URLCONF = "maziwalog.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR / "templates"],
+        "DIRS": [BASE_DIR / "myapp" / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -153,7 +160,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = "static/"
-STATICFILES_DIRS = [BASE_DIR / "static"]
+STATICFILES_DIRS = [BASE_DIR / "myapp" / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
 STORAGES = {
@@ -191,6 +198,18 @@ ACCOUNT_USER_MODEL_USERNAME_FIELD = None
 ACCOUNT_EMAIL_VERIFICATION = "optional"
 ACCOUNT_SIGNUP_FORM_CLASS = "myapp.forms.MaziwaSignupForm"
 ACCOUNT_LOGOUT_ON_GET = False
+
+# Session management: a login stays valid while the user is active and expires
+# after SESSION_COOKIE_AGE_DAYS of inactivity (the window slides on every
+# request). The login form's "Remember me" checkbox is honoured: checked = the
+# full period below, unchecked = a SHORT_SESSION_MINUTES sliding session that
+# survives closing the browser for that long (see MaziwaLoginForm).
+SESSION_COOKIE_AGE = env_int("SESSION_COOKIE_AGE_DAYS", 7) * 24 * 60 * 60
+SHORT_SESSION_SECONDS = env_int("SESSION_SHORT_MINUTES", 30) * 60
+SESSION_SAVE_EVERY_REQUEST = True
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+ACCOUNT_SESSION_REMEMBER = None
+ACCOUNT_FORMS = {"login": "myapp.forms.MaziwaLoginForm"}
 
 SOCIALACCOUNT_AUTO_SIGNUP = True
 SOCIALACCOUNT_LOGIN_ON_GET = True

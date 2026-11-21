@@ -81,6 +81,17 @@
     var memberNumber = (el('stkMemberNumber') || {}).value || '';
 
     var errNode = el('stkError');
+    var errTimer = null;
+    function showError(message) {
+      if (!errNode) return;
+      errNode.textContent = message;
+      errNode.classList.remove('d-none');
+      if (errTimer) clearTimeout(errTimer);
+      errTimer = setTimeout(function () {
+        errNode.classList.add('d-none');
+        errNode.textContent = '';
+      }, 8000);
+    }
     if (errNode) { errNode.classList.add('d-none'); errNode.textContent = ''; }
     showState('stkStatePending');
 
@@ -105,7 +116,7 @@
             'The payment request was rejected.';
           if (typeof message !== 'string') message = message.join(' ');
           showState('stkStateIdle');
-          if (errNode) { errNode.textContent = message; errNode.classList.remove('d-none'); }
+          showError(message);
           return;
         }
         var checkout = result.body.checkout_request_id;
@@ -113,10 +124,7 @@
       })
       .catch(function () {
         showState('stkStateIdle');
-        if (errNode) {
-          errNode.textContent = 'Network error while starting the payment. Try again.';
-          errNode.classList.remove('d-none');
-        }
+        showError('Network error while starting the payment. Try again.');
       });
   }
 

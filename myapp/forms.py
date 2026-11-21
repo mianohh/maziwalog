@@ -1,8 +1,11 @@
-"""Tenant-aware forms for intake, credit, payments, and registration."""
+# Tenant-aware forms for intake, credit, payments, and registration.
 
 import re
 
+from allauth.account import app_settings as account_app_settings
+from allauth.account.forms import LoginForm
 from django import forms
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 
@@ -376,3 +379,22 @@ class STKPushForm(forms.Form):
         if amount != amount.to_integral_value():
             raise ValidationError("Daraja requires a whole-shilling amount.")
         return amount
+
+
+class MaziwaLoginForm(LoginForm):
+    """
+    Login form with short-session support.
+
+    With "Remember me" unchecked, allauth expires the session at browser
+    close; here it instead becomes a SHORT_SESSION_SECONDS sliding session
+    that survives closing the browser for that long.
+    """
+
+    def login(self, request, redirect_url=None):
+        response = super().login(request, redirect_url)
+        remember = account_app_settings.SESSION_REMEMBER
+        if remember is None:
+            remember = self.cleaned_data.get("remember", False)
+        if not remember:
+            request.session.set_expiry(settings.SHORT_SESSION_SECONDS)
+        return response

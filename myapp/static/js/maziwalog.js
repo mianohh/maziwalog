@@ -27,3 +27,32 @@
     });
   });
 })();
+
+(function () {
+  'use strict';
+
+  // Auto-dismiss flash messages: visible briefly, then faded out.
+  // Hovering an alert pauses the countdown so longer text stays readable.
+  function closeAlert(el) {
+    if (window.bootstrap && window.bootstrap.Alert) {
+      window.bootstrap.Alert.getOrCreateInstance(el).close();
+    } else {
+      el.classList.remove('show');
+      window.setTimeout(function () { el.remove(); }, 200);
+    }
+  }
+
+  function scheduleDismiss(el) {
+    var ms = parseInt(el.getAttribute('data-ml-autodismiss'), 10);
+    if (!ms || ms <= 0) return;
+    var timer = window.setTimeout(function () { closeAlert(el); }, ms);
+    el.addEventListener('mouseenter', function () { window.clearTimeout(timer); });
+    el.addEventListener('mouseleave', function () {
+      timer = window.setTimeout(function () { closeAlert(el); }, ms);
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('[data-ml-autodismiss]').forEach(scheduleDismiss);
+  });
+})();

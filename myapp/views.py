@@ -1,10 +1,9 @@
-"""
-MaziwaLog web views.
+# MaziwaLog web views.
 
-Tenant isolation: every query is filtered by
-``request.cooler`` and every object lookup is scoped to that cooler, so a
-cross-workspace id resolves to HTTP 404.
-"""
+# Tenant isolation: every query is filtered by
+# ``request.cooler`` and every object lookup is scoped to that cooler, so a
+# cross-workspace id resolves to HTTP 404.
+
 
 import calendar
 import json
@@ -14,7 +13,7 @@ from decimal import Decimal
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
-from django.db.models import Sum
+from django.db.models import Count, Sum
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -146,6 +145,12 @@ def manager_home(request):
         .select_related("farmer")[:8]
     )
 
+    today_totals = MilkIntake.objects.filter(
+        cooler=cooler, collection_date=today
+    ).aggregate(accepted=Sum("accepted_litres"), rejected=Sum("rejected_litres"), rows=Count("id"))
+    rejected_today = today_totals["rejected"] or Decimal("0.00")
+    total_today = (today_totals["accepted"] or Decimal("0")) + rejected_today
+
     context = {
         "stats": stats,
         "recent_intakes": recent_intakes,
@@ -154,37 +159,10 @@ def manager_home(request):
         "today": today,
         "month_label": today.strftime("%B %Y"),
         "rate_form": DailyMilkRateForm(),
-        "rejected_today": (
-            MilkIntake.objects.filter(cooler=cooler, collection_date=today).aggregate(
-                total=Sum("rejected_litres")
-            )["total"]
-            or Decimal("0.00")
-        ),
+        "rejected_today": rejected_today,
         "rejection_rate_pct": (
-            round(
-                (
-                    (
-                        MilkIntake.objects.filter(
-                            cooler=cooler, collection_date=today
-                        ).aggregate(total=Sum("rejected_litres"))["total"]
-                        or Decimal("0")
-                    )
-                    / (
-                        (MilkIntake.objects.filter(cooler=cooler, collection_date=today).aggregate(
-                            total=Sum("accepted_litres")
-                        )["total"] or Decimal("0"))
-                        + (
-                            MilkIntake.objects.filter(
-                                cooler=cooler, collection_date=today
-                            ).aggregate(total=Sum("rejected_litres"))["total"]
-                            or Decimal("0")
-                        )
-                    )
-                    * 100
-                ),
-                1,
-            )
-            if MilkIntake.objects.filter(cooler=cooler, collection_date=today).exists()
+            round(rejected_today / total_today * 100, 1)
+            if today_totals["rows"] and total_today
             else Decimal("0.0")
         ),
         "pending_payout_kes": (

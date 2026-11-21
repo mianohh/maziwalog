@@ -17,7 +17,7 @@
       <form method="post">
         {% csrf_token %}
         {% if form.non_field_errors %}
-        <div class="alert alert-danger py-2 small">{{ form.non_field_errors|join:" " }}</div>
+        <div class="alert alert-danger py-2 small" data-ml-autodismiss="8000">{{ form.non_field_errors|join:" " }}</div>
         {% endif %}
 
         {% for field in form %}

@@ -6,7 +6,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Sign in — MaziwaLog</title>
+  <title>Create account — MaziwaLog</title>
   <link rel="icon" href="{% static 'img/favicon.ico' %}" sizes="48x48">
   <link rel="icon" type="image/png" sizes="192x192" href="{% static 'img/favicon-192.png' %}">
   <link rel="apple-touch-icon" href="{% static 'img/apple-touch-icon.png' %}">
@@ -20,7 +20,7 @@
 <body class="bg-light" style="font-family:'DM Sans',system-ui,sans-serif;">
 
 <div class="min-vh-100 d-flex align-items-center justify-content-center py-5">
-  <div class="w-100" style="max-width:420px;padding:0 1rem;">
+  <div class="w-100" style="max-width:440px;padding:0 1rem;">
 
     {# Brand #}
     <div class="text-center mb-4">
@@ -28,8 +28,8 @@
         <span class="ml-brand-mark"><img src="{% static 'img/maziwalog-logo.png' %}" alt=""></span>
         <span class="fw-bold fs-5 text-dark">MaziwaLog</span>
       </a>
-      <h1 class="h4 fw-bold text-dark mb-1">Welcome back</h1>
-      <p class="text-muted small">Sign in to your dairy cooler workspace</p>
+      <h1 class="h4 fw-bold text-dark mb-1">Create your account</h1>
+      <p class="text-muted small">Join a cooler workspace as manager, clerk, or farmer</p>
     </div>
 
     <div class="card border-0 shadow-sm rounded-3">
@@ -55,43 +55,68 @@
         </div>
 
         {# Form #}
-        <form method="post" action="{% url 'account_login' %}">
+        <form method="post" action="{% url 'account_signup' %}">
           {% csrf_token %}
 
           {% if form.non_field_errors %}
-          <div class="alert alert-danger py-2 small mb-3">
+          <div class="alert alert-danger py-2 small mb-3" data-ml-autodismiss="8000">
             <i class="bi bi-exclamation-triangle-fill me-1"></i>{{ form.non_field_errors|join:" " }}
           </div>
           {% endif %}
 
-          <div class="mb-3">
-            <label class="form-label fw-semibold small" for="{{ form.login.id_for_label }}">Email address</label>
-            {{ form.login|addclass:"form-control" }}
-            {% if form.login.errors %}
-            <div class="invalid-feedback d-block">{{ form.login.errors|join:" " }}</div>
-            {% endif %}
-          </div>
+          {% for field in form %}
+          {% if field.name != 'remember' %}
 
+          {% if field.field.widget.input_type == 'radio' %}
+          {# Radio group — render each choice as a form-check #}
           <div class="mb-3">
-            <div class="d-flex justify-content-between align-items-center mb-1">
-              <label class="form-label fw-semibold small mb-0" for="{{ form.password.id_for_label }}">Password</label>
-              <a href="{% url 'account_reset_password' %}" class="small text-decoration-none" style="color:#1A5C3A;">Forgot?</a>
+            <span class="form-label fw-semibold small d-block mb-2">{{ field.label }}</span>
+            {% for choice in field %}
+            <div class="form-check">
+              {{ choice.tag }}
+              <label class="form-check-label small" for="{{ choice.id_for_label }}">{{ choice.choice_label }}</label>
             </div>
-            {{ form.password|addclass:"form-control" }}
-            {% if form.password.errors %}
-            <div class="invalid-feedback d-block">{{ form.password.errors|join:" " }}</div>
+            {% endfor %}
+            {% if field.errors %}
+            <div class="invalid-feedback d-block small mt-1">
+              <i class="bi bi-exclamation-circle me-1"></i>{{ field.errors|join:" " }}
+            </div>
             {% endif %}
           </div>
 
-          {% if form.remember %}
-          <div class="form-check mb-3">
-            {{ form.remember|addclass:"form-check-input" }}
-            <label class="form-check-label small" for="{{ form.remember.id_for_label }}">Remember me</label>
+          {% elif field.field.widget.input_type == 'checkbox' %}
+          {# Single checkbox — form-check layout #}
+          <div class="mb-3 form-check">
+            {{ field|addclass:"form-check-input" }}
+            <label class="form-check-label small" for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {% if field.errors %}
+            <div class="invalid-feedback d-block small">
+              <i class="bi bi-exclamation-circle me-1"></i>{{ field.errors|join:" " }}
+            </div>
+            {% endif %}
+          </div>
+
+          {% else %}
+          {# Text / email / password / select — standard form-control #}
+          <div class="mb-3">
+            <label class="form-label fw-semibold small" for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field|addclass:"form-control" }}
+            {% if field.help_text %}
+            <div class="form-text text-muted" style="font-size:.78rem;">{{ field.help_text }}</div>
+            {% endif %}
+            {% if field.errors %}
+            <div class="invalid-feedback d-block small mt-1">
+              <i class="bi bi-exclamation-circle me-1"></i>{{ field.errors|join:" " }}
+            </div>
+            {% endif %}
           </div>
           {% endif %}
 
-          <button type="submit" class="btn w-100 py-2 fw-semibold text-white" style="background:#1A5C3A;">
-            Sign in
+          {% endif %}
+          {% endfor %}
+
+          <button type="submit" class="btn w-100 py-2 fw-semibold text-white mt-1" style="background:#1A5C3A;">
+            Create account
           </button>
         </form>
 
@@ -99,12 +124,13 @@
     </div>
 
     <p class="text-center text-muted small mt-3">
-      No account?
-      <a href="{% url 'account_signup' %}" class="text-decoration-none fw-semibold" style="color:#1A5C3A;">Create one</a>
+      Already registered?
+      <a href="{% url 'account_login' %}" class="text-decoration-none fw-semibold" style="color:#1A5C3A;">Sign in</a>
     </p>
 
   </div>
 </div>
 
+<script src="{% static 'js/maziwalog.js' %}"></script>
 </body>
 </html>

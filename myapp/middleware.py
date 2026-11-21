@@ -1,15 +1,14 @@
-"""
-ActiveCoolerMiddleware resolves the active cooler workspace per request.
+# ActiveCoolerMiddleware resolves the active cooler workspace per request.
 
-Resolves the tenant workspace for every request and attaches:
+# Resolves the tenant workspace for every request and attaches:
 
-    request.cooler     the active Cooler (or None)
-    request.membership the user's Membership in that cooler (or None)
-    request.role       MANAGER | CLERK | FARMER | STAFF | ANONYMOUS
+#     request.cooler     the active Cooler (or None)
+#     request.membership the user's Membership in that cooler (or None)
+#     request.role       MANAGER | CLERK | FARMER | STAFF | ANONYMOUS
 
-Isolation contract: every domain query is filtered by
-``request.cooler``, and cross-tenant lookups raise HTTP 404.
-"""
+# Isolation contract: every domain query is filtered by
+# ``request.cooler``, and cross-tenant lookups raise HTTP 404.
+
 
 from django.shortcuts import render
 
