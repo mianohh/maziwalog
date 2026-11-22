@@ -17,8 +17,9 @@ from django.db.models import Count, Sum
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_http_methods, require_POST
 
 from . import services
 from .daraja import DarajaClient, DarajaError
@@ -71,6 +72,14 @@ def role_required(*roles):
         return wrapper
 
     return decorator
+
+
+# Health check polled by UptimeRobot to keep the Render free tier awake.
+@never_cache
+@require_http_methods(["GET", "HEAD"])
+def health(request):
+    """Liveness probe: no database, no session, no template."""
+    return HttpResponse("OK", content_type="text/plain")
 
 
 # ---------------------------------------------------------------------------

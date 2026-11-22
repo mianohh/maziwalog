@@ -17,6 +17,8 @@ from .models import Membership
 ANONYMOUS = "ANONYMOUS"
 STAFF = "STAFF"
 SESSION_KEY = "active_cooler_id"
+# Liveness probe needs no tenant workspace.
+HEALTH_PATH = "/health/"
 
 
 class ActiveCoolerMiddleware:
@@ -24,6 +26,9 @@ class ActiveCoolerMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
+        if request.path == HEALTH_PATH:
+            # Skip tenant resolution so /health/ stays database-free.
+            return self.get_response(request)
         self._attach(request)
         response = self.get_response(request)
         return response

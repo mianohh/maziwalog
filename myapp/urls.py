@@ -5,6 +5,8 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    # Liveness probe for the uptime monitor.
+    path("health/", views.health, name="health"),
     path("", views.home, name="home"),
     path("dashboard/", views.dashboard, name="dashboard"),
     path("complete-registration/", views.complete_registration, name="complete_registration"),
